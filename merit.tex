@@ -321,7 +321,7 @@
 
 
 \title{Merit: A digital money built for people}
-\author{Wali, Adil \\ Khailo, Maxim}
+\author{Maxim Khailo \\ Adil Wali}
 \begin{document}
 \maketitle
 
@@ -628,7 +628,7 @@ address, where a miner will package both in the same block. This requirement
 exists to prevent parking aliases in the blockchain without being invited and
 is an anti-spam measure for beacons.
 
-A user can deactivate a Beacons by spending the beacon's last invite. If a beacon's
+A user can deactivate a beacon by spending the beacon's last invite. If a beacon's
 final invite is spent, then the alias used in that beacon becomes available again
 for someone else to take.
 
@@ -965,7 +965,7 @@ Where $rand$ is used to search for a winner in the CDF space.
 \subsection{Community Beacons}
 
 The beacon and invite mechanisms provide a base platform to build exclusive
-communities and authentication system. People can create a community beacon
+communities and authentication systems. People can create a community beacon
 which has an address just like a normal beacon. The community beacon is an
 extension of the existing beacon and contains a badge script.
 
@@ -983,11 +983,12 @@ extension of the existing beacon and contains a badge script.
 
 Activating a community beacon is just like another beacon and requires an invite.
 However, sending Merit to the address beaconed requires the additional badge script to
-run successfully for the transaction to be considered valid.
+run successfully for the transaction to be considered valid. This extra validation
+provides opportunity to restrict beacons in various ways.
 
 \subsubsection{Badges}
 
-Badges are assigned to addresses if an address sends Merit to the community address
+Badges are assigned to addresses when an address sends Merit to the community address
 and the badge script validates the transaction. The creators of a community beacon
 can query the Merit system whether the badge has been assigned or not to an address.
 
@@ -1012,12 +1013,15 @@ Badges allow people to create exclusive communities. For example, a website
 which wishes to charge for content can allow users to send a specified amount
 of Merit to the website's alias, and the sender will automatically be assigned the
 community badge. The website operator can then challenge the user to prove they
-are the owner of the badged address by making them sign some data with a private
+are the owner of the address by making them sign some data with their private
 key. Once the address owner verifies their identity, the operator can check 
-whether the address has the correct badge and allow them to see content.
+whether the address has the correct badge and allow them to access the website.
 Another example is a private venue wanting to sell tickets. They can create a 
 community beacon and ask patrons to send Merit to the beacon to get a digital
-ticket in the form of a badge.
+ticket in the form of a badge. Software and hardware creators can provide
+authentication systems which build on the alias and badge system to replace
+traditional tickets, subscriptions, and other services that have payment dependant
+features.
 
 \subsubsection{Badge Scripts}
 
@@ -1027,8 +1031,8 @@ language \cite{scripts}. However, badges require new instructions for the virtua
 machine (called opcodes) to be useful for building communities and the desired
 use cases outlined above. The Bitcoin scripting system is designed so that scripts
 have minimal context and are not transaction aware. For Badges to function, we
-need to create new opcodes which can query the blockchain and inputs of the
-transaction the script is validating.
+need to create new opcodes which can query the blockchain or inspect different
+parts of the transaction like the inputs and outputs.
 
 \begin{center}
     \scalebox{0.85}{
@@ -1045,6 +1049,11 @@ With Merit transactions, the scripts work by combining an output script with the
 coin's public script for validating an output. Badges work the same way but add
 the badge script with an empty stack as additional validation. Vaulting, described
 below, introduces even more opcodes which are useful for badges as well.
+
+An obvious downside to adding powerful opcodes that can query the transaction or
+blockchain is that validation time must necessarily increase. Great care must
+be taken to provide an upper bound in time that a transaction can take to validate.
+This upper bound is not defined here and will remain implementation specific. 
 
 \subsubsection{Badge Transaction Validation}
 
