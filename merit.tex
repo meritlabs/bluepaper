@@ -962,6 +962,37 @@ $$rand = siphash(hash)$$
 
 Where $rand$ is used to search for a winner in the CDF space.
 
+\subsection{Lottree}
+
+The Ambassador Forest is a variant of a Lottree \cite{lottree} and is designed
+to satisfy specific properties at the expense of others. The word Lottree is a
+shortening of Lottery Tree. The Merit Lottree is designed to balance fairness and
+the solicitation incentives at the expense of a limited Sybil attack.
+
+\subsubsection{Lottree Sybil Attack}
+
+One tradeoff Merit has made was to allow a limited Sybil attack to maintain the
+solicitation incentive. It is possible to double your ANV in aggregate if you
+chain several identities and put all the Merit in the leaf identity. One
+solution to this problem is a Pachira Lottree \cite{lottree} which solves the
+Sybil attack problem by ensuring the probability of creating a subtree vs having
+a single node are the same. This is achieved by using a function on a node's
+contribution that has specific properties which allow a subtree to be collapsed
+into one node. This solution to the Sybil attack comes at the expense of
+eliminating the solicitation incentive and therefore the purpose of Proof-of-Growth
+which is designed to reward people helping others join the system. 
+
+\subsubsection{Honest Incentives}
+
+We would argue here that the Sybil attack is limited and you can at best double 
+your existing ANV. If you want to have a significant ANV via the Sybil attack, you
+would need to first acquire a significant amount of Merit. Honestly growing your
+ANV is far more economical and doesn't have any upper bound like the Sybil attack 
+does.
+
+We believe having a stronger solicitation incentive rewards those who act
+honestly over those who are dishonest.
+
 \subsection{Community Beacons}
 
 The beacon and invite mechanisms provide a base platform to build exclusive
@@ -2392,6 +2423,13 @@ without having to understand and manage complex software systems.
     T. Berners-Lee, R. Fielding, L. Masinter,
     \textit{Uniform Resource Identifiers (URI): Generic Syntax},
     http://www.rfc-base.org/txt/rfc-2396.txt
+
+\bibitem{lottree}
+    John R. Douceur, Thomas Moscibroda,
+    \textit{Lottery Trees: Motivational Deployment of Networked Systems},
+    Microsoft Research, January, 2007
+
+
 
 \end{thebibliography}
 \end{document}
