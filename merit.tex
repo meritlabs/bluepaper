@@ -144,7 +144,7 @@
 
 \newglossaryentry{sharding}
 {
-    name=shard,
+    name=sharding,
     description={Breaking up a problem space into \glspl{shard}}
 }
 
@@ -402,46 +402,56 @@ which can provide performance that is many orders-of-magnitude higher than other
 \section{The Problem}
 \subsection{The Third-Party Paradox}
 
-The design of Cryptocurrencies requires their users to manage and secure hundreds
-of cryptographic keys themselves. Each \gls{transaction} in \gls{Bitcoin} creates a new key which the user must
-manage and secure. In this way, each cryptocurrency acts as a \gls{bearer currency} and does not have any of the
-modern conveniences centralized banking systems provide. In this current state-based system, 
-if one were to lose access to their bank
-account, they can get that access back by simply providing proof-of-identity. If they go on to lose 
-access to their \gls{Bitcoin} keys, nobody can recover the funds. Because of how impractically burdensome this is for most users, 
-many users of many popular cryptocurrencies such as \gls{Bitcoin}, \gls{Ethereum}, 
-and \gls{Litecoin} rely on third-party services to attempt to securely store these cryptographic keys.  Simply stated, 
-most cryptocurrencies avoid the realities of the human nature and the human condition.  
-As a result, counter to the core ethos of cryptocurrencies, third-party companies have have become the defacto standard for so many 
-cryptocurrency users worldwide.
+The design of many Cryptocurrencies requires users to manage and secure hundreds
+of cryptographic keys themselves. Each \gls{transaction} in \gls{Bitcoin} creates
+a new key which the user must manage and secure. In this way, each cryptocurrency
+acts as a \gls{bearer currency} and does not have any of the modern conveniences
+centralized banking systems provide. In a state run fiat-based system, if one 
+were to lose access to their bank account, they can get that access back 
+by simply providing proof-of-identity. If they go on to lose access to their 
+\gls{Bitcoin} keys, nobody can recover the funds. Because of how impractically 
+burdensome this is for most users, many users of many popular cryptocurrencies 
+such as \gls{Bitcoin}, \gls{Ethereum}, and \gls{Litecoin} rely on third-party
+services to securely store these cryptographic keys. Simply stated, most
+cryptocurrencies avoid the realities of human nature and the human condition. 
+As a result, counter to the core ethos of cryptocurrencies, third-party companies
+have have become the defacto standard for so many users worldwide.
 
 Users of cryptocurrencies also rely on third-parties to maintain the blockchain ledgers
 because the vast majority of mining and node operations have become centralized.
-Because of the poor quality and usability of much of the blockchain software, users have a difficult time
-to use these systems in the decentralized way they were intented to be used.  
+Because of the poor quality and usability of many blockchain projects, people 
+have a difficult time using these systems in the decentralized way they were intented to be used.  
 
-Mining is also dramatically centralized.  This is primarily because the Proof-of-Work approach to mining rewards those with extraordinarily large bank accounts.  
-Companies and individuals who can fund large mining data centers full of specialized hardware dominate the hashpower of most major currencies.  \cite{drypool}
-Secondarily, the poor quality and high-opacity of much of the mining software causes users to have a difficult time
-in truly decentralizing these systems the way they were intended to be. Even those users who are brave enough to mine cryptocurrencies 
-typically rely on centralized mining pools
-because most systems have become impractical to mine in a decentralized way.
+Mining is also dramatically centralized.  This is primarily because the Proof-of-Work 
+approach to mining rewards those with extraordinarily large bank accounts. Companies 
+and individuals who can fund large mining data centers full of specialized hardware 
+dominate the hashpower of most major currencies.  \cite{drypool} Secondarily, 
+the poor quality and high-opacity of much of the mining software causes users 
+to have a difficult time in truly decentralizing these systems the way they 
+were intended to be. Even those users who are brave enough to mine cryptocurrencies
+typically rely on centralized mining pools because most systems have become
+impractical to mine in a decentralized way.
 
 The paradox exists because of the decentralized nature of these systems. Decentralized
 systems are hard to make user-friendly. This usability gap gets filled by centralized
-third-parties, and many non-expert users drawn to the space do not realize that this centralization is completely counter to the purpose of cryptocurrencies. 
-Perhaps worst of all, this centralization creates a false sense of security for users who are drawn to the 'cryptographically secure' headlines.  
-Billions of dollars have already been stolen from these centralized banks that attempt to bridge the usability gap.  
-Merit aims to solve this usability gap so that users can get the level of simplicity that they expect without 
-having to compromise on the core notion of decentralization.  
+third-parties, and many non-expert users drawn to the space do not realize that this
+centralization is completely counter to the purpose of cryptocurrencies.  Perhaps
+worst of all, this centralization creates a false sense of security for users who 
+are drawn to the 'cryptographically secure' headlines.  Billions of dollars have 
+already been stolen from these centralized banks that attempt to bridge the usability gap.  
+Merit aims to solve this usability gap so that users can get the level of simplicity
+that they expect without having to compromise on the core notion of decentralization.  
 
 \subsection{Safety First}
 Merit recognized the need to aggressively focus on ease of use and safety so that
  users are not tempted to rely on centralized third-parties for everyday use.
-To this end, Merit innovates by adding the new Global Send protocal, which empowers users to send funds quickly and easily across any communication
-channel like SMS and email. This approach stays true to decentralization through the creation of an escrow address on the blockchain 
-that can subsequently be claimed by the recipient.  Merit also provides a way to secure funds in
-vaults that have whitelists, rate limiting, and decentralized account recovery. These features make theft more difficult and diminish the consequences.
+To this end, Merit innovates by adding the new Global Send protocal, which 
+empowers users to send funds quickly and easily across any communication channel 
+like SMS and email. This approach stays true to decentralization through the creation
+of an escrow address on the blockchain that can subsequently be claimed by the recipient.
+Merit also provides a way to secure funds in vaults that have whitelists, rate
+limiting, and decentralized account recovery. These features make theft more 
+difficult and diminish the consequences.
 
 \subsection{The Death Star Networks}
 The dream of everyone running mining software has been subverted by those with
@@ -614,12 +624,11 @@ The data used to generate the signature is the serialized Beacon sans the signat
 
 \subsubsection{Aliases}
 The alias in the beacon must be globally unique. An alias can be used in place of an
-address in all the core activities on the Merit network.  Aliases provide a much easier-to-use 
-way to identify recipients of
-transactions. This alias is optional, and users can simply choose to only be known by their 
-more classic Merit address.  We sense that aliases will not only be used by most users, but will also be 
-used by institution to make it easy to transact with customers, donors, and payees via the Merit 
-blockchain.
+address in all the core activities on the Merit network.  Aliases provide a much easier way 
+of identifying recipients of transactions. This alias is optional, and users can simply 
+choose to only be known by their more classic Merit address.  We sense that aliases 
+will not only be used by most users, but will also be used by institution to make
+it easy to transact with customers, donors, and payees via the Merit blockchain.
 
 \subsubsection{Beacon Lifetime}
 The beacon is not mined in a block until its address is invited via an \gls{invite}
@@ -677,7 +686,7 @@ is a blockchain of assets, the risks for phishing
 would be too high if aliases used Unicode. After serious consideration, it was determined that aliases 
 should be heavily restricted at the cost of flexibility and internationalization.
 
-Aliases must be matched case-insensitively and must pass the following \gls{regex}.
+Aliases must be matched the following case-insensitive \gls{regex}.
 
 \lstset{language=C}
 \begin{lstlisting}[caption=Alias Validation Regex]
@@ -813,10 +822,10 @@ which further decreases its likelihood of success.
 \subsubsection{Distribution Rate}
 
 The number of invites generated is based on the usage of invites within the last three days.  
-The Proof-of-Growth algorithm looks at the number of blocks that would have comprised the previous three days
+The invite distribution algorithm looks at the number of blocks that would have comprised the previous three days
 (assuming 1 block issued per minute). The algorithm self-regulates in this way so that 
 there are never too many or too few invites in the system at any given time.  The system 
-has an inherent minimum of one block per minute to a maximum of ten blocks per minute.
+has an inherent minimum of one invite per minute to a maximum of ten invites per minute.
 
 We can illustrate this through an example.  If, in the last five days, users have sent 7 invitations
 per block on average, that would mean that the current block should reward community members with 7 new invites.  
@@ -868,12 +877,13 @@ $$AddressWeight_a = rand^{\frac{1}{ANV_a}}$$
 
 The $ANV$ is computed by taking an address's unspent balance and
 recursively applying it through the ambassador tree, which is halved at each step.
+You can think of it as a variation of the \cite{PageRank} algorithm with a damping value of 0.5.
 We chose the $ANV$ because it affords the best chance of winning the lottery to
  the ambassadors who have grown the network the most.
 The more an ambassador grows their network, the higher chance they have of winning
  part of the mining reward.
 
-$$ANV_p = \sum_{c=1}^{total children} \frac{ANV_c}{2}$$
+$$ANV_p = balance + \sum_{c=1}^{total children} \frac{ANV_c}{2}$$
 
 \begin{figure}[H]
     \begin{center}
@@ -1645,7 +1655,7 @@ bandwidth bound.
 Using the Cuckoo Cycle enables an extra degree of freedom in adjusting the difficulty.
 In addition to the bitcoin $nBits$ difficulty parameter which specifies how many
 zero bits the hash must have to be considered a valid proof-of-work, Merit also
-introduces $edgeBits$ which specifies the size of the graph that needs to be computed.
+introduces $edgeBits$ which specifies the minimum size of the graph that needs to be computed.
 Currently, at the time of writing this, a single proof attempt where $edgeBits=26$
 takes about 700MB of ram. This is reasonable enough that the mining software can
 run on a mobile device.
@@ -1767,7 +1777,7 @@ rate over Bitcoin.
 
 In practice, the maximum block size might not be reached because of bandwidth limitations
 in the network. Research done in the Bitcoin Unlimited paper \cite{bitcoinunlimited} looks
-at the impact of various block sizes. Miners are at risk of creating stagnant blocks 
+at the impact of various block sizes. Miners are at risk of creating orphaned blocks 
 when as the size of blocks increases block because it takes some time for a block to propagate
 across the network. The larger the block size, the higher the chance the block will
 compete with other blocks mined during the time it takes to propagate.
@@ -2024,8 +2034,9 @@ The \gls{weave block} has the following data in the header.
     }
 \end{center}
 
-The weave blocks require a \gls{proof-of-work} and the are signed by the proposed
-writer of the \gls{warp} that is specified in by the warp number.
+The weave blocks require a \gls{proof-of-work} and are signed by the winning
+writer of the \gls{warp} block. Which warp they can write to is specified by the warp number
+that is deterministically selected in a round robin fashion.
 
 \begin{figure}[H]
     \begin{center}
@@ -2240,13 +2251,14 @@ increase to four minutes. When $N$ reaches 64, we end up with a confirmation tim
 around an hour. The relation between throughput is geometrically defined via the
 space-time relation of the Weave and Warp chains.
 
-If we say each Warp leader is capable of writing 1K split transactions per second, and
-likely 100\% of those transactions created from a transaction with at least two inputs,
-then we can say the overall transaction throughput is 1/2 of the Warp transaction
-throughput. So with 2 Warps, we have an overall rate of 1000 transactions per second
-because $1000 = 2000/2$. Four Warps would double the transaction rate to 2K transactions
-per second. It is easy to see how only having a few Warps can increase the transaction
-rate significantly. However, it is important to note here that this assumes transactions
+As an illustrate example, if we say each Warp leader is capable of writing 1K split
+transactions per second, and likely 100\% of those transactions created from a
+transaction with at least two inputs, then we can say the overall transaction
+throughput is 1/2 of the Warp transaction throughput. So with 2 Warps, we have
+an overall rate of 1000 transactions per second because $1000 = 2000/2$. Four
+Warps would double the transaction rate to 2K transactions per second. It is 
+easy to see how only having a few Warps can increase the transaction rate
+significantly. However, it is important to note here that this assumes transactions
 with only two inputs. With more substantial transactions, the throughput will not
 double so cleanly. The dynamic warp adjustment algorithm should compensate for
 this and provision enough warps to handle the required transaction volume. An
@@ -2392,6 +2404,17 @@ without having to understand and manage complex software systems.
     T. Berners-Lee, R. Fielding, L. Masinter,
     \textit{Uniform Resource Identifiers (URI): Generic Syntax},
     http://www.rfc-base.org/txt/rfc-2396.txt
+
+\bibitem{avalanche}
+    By Horst Feistel,
+    \textit{Cryptography and Computer Privacy},
+    http://www.apprendre-en-ligne.net/crypto/bibliotheque/feistel/index.html
+
+\bibitem{PageRank}
+    Sergey Brin, Lawrence Page,
+    \textit{The Anatomy of a Large-Scale Hypertextual
+Web Search Engine},
+    http://ilpubs.stanford.edu:8090/361/1/1998-8.pdf
 
 \end{thebibliography}
 \end{document}
