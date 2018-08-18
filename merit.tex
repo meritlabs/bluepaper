@@ -562,10 +562,10 @@ an Ambassador Forest.
 \end{figure}
 
 It is a forest because the \gls{genesis address} does not participate in the lottery
-system. Each node in the Ambassador Forest has an Aggregate Network Value ($ANV$)
+system. Each node in the Ambassador Forest has a Community Growth Score ($CGS$)
 which is computed as a function of the node, and its children's value in Merit.
-The higher the $ANV$, the more likely the Ambassador will win a reward in a block.
-The function used to compute the $ANV$ for an address is fair, and new members
+The higher the $CGS$, the more likely the Ambassador will win a reward in a block.
+The function used to compute the $CGS$ for an address is fair, and new members
 can compete with older members as readily.
 
 This beaconing process is a pre-requisite requirement for enabling a
@@ -844,111 +844,67 @@ reward being split between the security miner and the top ambassador miners of e
 A deterministic lottery system executes a weighted random sampling
 of the existing keys and distributes proportional rewards to the winners.
 
-\subsubsection{Weighted Reservoir Random Sampling}
-Every time a transaction lands in a block, it enters the addresses from it and
-each addresses parents from the Ambassador Tree into a lottery of 10,000 entrants.
-We call this the $LotteryPool$. The $LotteryPool$ uses a modified version of the
-weighted reservoir random sampling algorithm by Efraimidis and Spirakis \cite{eframspirakis}.
-It is essential to maintain a constant size of the pool to have a constant-time
-processing complexity per block.
+As of this writing, about 10 Merit ($MRT$) are awarded to the miners and 10 $MRT$
+are rewarded to Ambassadors. Twenty Ambassadors win rewards per block where 5 $MRT$
+out of the 10 $MRT$ are distributed to Ambassadors based on what we call the 
+$CGS$ distribution and the other 5 $MRT$ are selected from the $SubCGS$ distribution.
+These two distributions will be explained in detail below.
 
-\subsubsection{Computing the Address Weight}
-An $AddressWeight$ is calculated deterministically for each entry which is used
-to decide whether it should be inserted in the $LotteryPool$.
+\subsubsection{Community Growth Scores}
 
-$$AddressWeight_a = rand^{\frac{1}{W_a}}$$
+Each user in the Merit network has a Community Growth Score ($CGS$) which is
+used to decide how to give out the Ambassador Rewards by the Merit network. 
+The $CGS$ factors in both the balance of the user and also the balances of their
+network. In order to compute the $CGS$ of an address, we must compute several 
+different things and bring them together.
 
-To produce the $AddressWeight$, we need a way to get random numbers deterministically.
-A random seed is computed using the previous blocks hash. Each address that is considered for the lottery is hashed using sha256 with the other addresses in
-transaction order. Each sha256 hash is then hashed again with $siphash$ to produce
-a 64-bit number. While we can arrive at these numbers deterministically, they can be treated as random 
-in practice because of the avalanche effect \cite{avalanche}.
+\begin{enumerate}
+    \item Aged Balances of all the addresses.
+    \item Address Network Contribution of all the addresses.
+    \item Subtree Contribution of all the Subtrees in the Ambassador Forest.
+    \item The Weighted Score of all the Addresses.
+    \item And finally the Expected Value of each address.
+\end{enumerate}
 
-    $$itemHash = sha256(previousItemHash, address)$$
-    $$rand = siphash(itemHash)$$
+\subsubsection{Aged Balance}
 
-We can then use $rand$ to compute the $AddressWeight$s. Besides the random value,
-we need a way to weight addresses with something the system finds important.
-We use the \emph{Aggregate Network Value} or the $ANV$ for $W$.
+The first step to compute the $CGS$ is to compute the $AgedBalance$ of an Address
+in the network. This is done by taking all the unspent coins, and adding up all the
+balances applying a $BalanceAppreciation$ function to them.
 
-$$AddressWeight_a = rand^{\frac{1}{ANV_a}}$$
+$$BalanceAppreciation(b,h,t,m) = b * (1 - \frac{1}{(\frac{t-h}{\frac{m}{4}})^2 + 1.0})$$
 
-\subsubsection{Weighting Addresses with Aggregate Network Value}
+Where $b$ is the balance, $h$ is the block height of the coin, $t$ is the height
+of the block being validated, $m$ is the number of blocks to reach maturity. Merit
+uses a 30 day maturity which at the time of a minute between blocks means $m = 43200$.
 
-The $ANV$ is computed by taking an address's unspent balance and
-recursively applying it through the ambassador tree, which is halved at each step.
-You can think of it as a variation of the \cite{PageRank} algorithm with a damping value of 0.5.
-We chose the $ANV$ because it affords the best chance of winning the lottery to
- the ambassadors who have grown the network the most.
-The more an ambassador grows their network, the higher chance they have of winning
- part of the mining reward.
+\subsubsection{Address Network Contribution}
 
-$$ANV_p = balance + \sum_{c=1}^{total children} \frac{ANV_c}{2}$$
+Each address in the network has a network contribution which is the sum of all
+the unspent coins multiplied by a $BeaconDecay$ function plus the sum of all
+aged balances. The $BeaconDecay$ function follows a similar curve to the $BalanceAppreciation$
+except in reverse.
 
-\begin{figure}[H]
-    \begin{center}
-        \digraph[scale=0.6]{ANV}{
-            rankdir=TD;
-            node [shape=record,style=filled,fillcolor="0.533333 0.314 0.87"];
-            parent [label="{Address|A}|{Balance|0}|{ANV|15}"];
-            childa [label="{Address|B}|{Balance|10}|{ANV|10}"];
-            childb [label="{Address|C}|{Balance|20}|{ANV|20}"];
-            parent -> childa [label="+5",dir=back]
-            parent -> childb [label="+10",dir=back];
-    }
-    \end{center}
-    \caption{Aggregate Network Value Propagation}
-\end{figure}
+$$BeaconDecay(h,t,d) = \frac{1}{(\frac{t-h}{\frac{d}{4}})^2 + 1.0}$$
 
-The halving is designed to encourage wide trees instead of deep trees and is
-an important tool in combating abuse. The idea is to discourage creating long
-key chains as they will provide no advantage in the Ambassador lottery.
+Where $h$ is the height of the beacon, $t$ is the height of the block we are validating,
+and $d$ is the decay time. The decay time is 30 days of block time which means $d = 43200$.
 
-\subsubsection{Modified Weighted Random Sampling}
-Once the $ANV$ is computed, we can produce the $weight$ used in the sampling algorithm.
-A modified version of the original Efraimidis and Spirakis algorithm is used which computes
-the LOG of the $AddressWeight$ instead.
+The Adress Network Contribution ($ANC$) can then be computed as.
 
-$$log(AddressWeight_a) = \frac{log(rand)}{ANV_a}$$
+$$BC(C,n,t,d)= BeaconDecay(h,t,d) * \sum_{i=0}^{n} C_i$$
+$$AB(C,H,n, t,m) = \sum_{i=0}^{n} AgedBalance(C_i,H_i,t,m)$$
+$$ANC(C,H,n,h,t,d,m) =  BC(C,n,t,d) + AB(C,H,t,m)$$
 
-Since $rand$ is a random 64bit bit number, we need to convert it to range from
-0 to 1. We can reformulate $log(rand)$ as $log(rand) = log(rand64) - log(max64)$
-where $rand64$ is our original random 64bit seed and $max64$ is the largest 64bit
-number.
+Where $C$ is the set of all unspent coin balances, $H$ is the set of all unspent
+coin block heights, $n$ is the total unspent coins, $h$ is the beacon height, $t$
+is the height of the current validation height, $d$ is the number of blocks for
+decay, and $m$ is the number of blocks until coin maturity.
 
-$$log(AddressWeight_a) = \frac{log(rand64) - log(max64)}{ANV_a}$$
-
-In this formula, the higher the $ANV_a$ is, the closer the $log(AddressWeight_a)$ is
-to zero. The smaller the weight, the more negative the $log(AddressWeight_a)$ becomes.
-
-
-\subsubsection{Expanding the Lottery Pool}
-
-As each address is considered for inclusion into the $LotteryPool$, its address
-Weight is computed and compared against the smallest $AddressWeight$ in the
-$LotteryPool$. The smallest entry is removed if the new entry is larger, and
-the larger is then inserted into the pool.
-
-\lstset{language=C}
-\begin{lstlisting}[caption=Lottery Pool Pseudo Code]
-    hash = previous block hash
-    for each transaction in the block
-        for each output address in transaction
-            hash = sha256(hash + sha256(output address))
-            rand = siphash64(hash)
-            anv = ANV(output address)
-            address weight = log(rand) - log(anv)
-
-            if address weight >= smallest pool weight
-                remove the smallest weighted address from the pool
-                insert output address into the pool
-\end{lstlisting}
-
-The implementation maintains a min-heap on disk and in memory to have good performance 
-inserting new entries in the lottery pool. Min-heap has an $O(log N)$ complexity
-in inserting and $O(1)$ complexity finding the min. Since the comparison against
-the min is the most common operation, a heap seemed to be the most appropriate
-data structure.
+\subsubsection{Subtree Contribution}
+\subsubsection{Weighted Score}
+\subsubsection{Expected Value}
+\subsubsection{Final CGS}
 
 \subsubsection{Block Lottery using Inverse Transform Sampling}
 
@@ -960,9 +916,9 @@ rewards per block, though very unlikely. This design choice seemed the fairest t
 Ambassadors.
 
 The cumulative distribution function used in the sampling is computed by taking
-all the entrant's $ANVs$ and stacking them on top of one another.
+all the entrant's $CGSs$ and stacking them on top of one another.
 
-$$CDF(ANV_i) = \frac{PreviousANV(ANV_i) + ANV_i}{TotalANV}$$
+$$CDF(CGS_i) = \frac{PreviousCGS(CGS_i) + CGS_i}{TotalCGS}$$
 
 To pick the top five winners. Similar to how the entrant gets in the lottery in the
 first place, the block hash is used as a seed value.
@@ -2287,6 +2243,7 @@ without having to understand and manage complex software systems.
 
 \begin{thebibliography}{1}
 
+
 \bibitem{drypool}
     Aron Laszka, Benjamin Johnson, and Jens Grossklags,
     \textit{When Bitcoin Mining Pools Run Dry},
@@ -2415,6 +2372,12 @@ without having to understand and manage complex software systems.
     \textit{The Anatomy of a Large-Scale Hypertextual
 Web Search Engine},
     http://ilpubs.stanford.edu:8090/361/1/1998-8.pdf
+
+\bibitem{pachira}
+     John (JD) Douceur, Thomas Moscibroda ,
+    \textit{Lottery Trees: Motivational Deployment of Networked Systems},
+    SIGCOMM 2007: ACM SIGCOMM Conference on Applications, Technologies,
+    Architectures, and Protocols for Computer Communications, Kyoto, Japan 
 
 \end{thebibliography}
 \end{document}
