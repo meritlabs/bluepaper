@@ -872,11 +872,15 @@ The first step to compute the $CGS$ is to compute the $AgedBalance$ of an Addres
 in the network. This is done by taking all the unspent coins, and adding up all the
 balances applying a $BalanceAppreciation$ function to them.
 
-$$BalanceAppreciation(b,h,t,m) = b * (1 - \frac{1}{(\frac{t-h}{\frac{m}{4}})^2 + 1.0})$$
+$$BalanceAppreciation(h,t,m) = (1 - \frac{1}{(\frac{t-h}{\frac{m}{4}})^2 + 1.0})$$
 
-Where $b$ is the balance, $h$ is the block height of the coin, $t$ is the height
+Where $h$ is the block height of the coin, $t$ is the height
 of the block being validated, $m$ is the number of blocks to reach maturity. Merit
 uses a 30 day maturity which at the time of a minute between blocks means $m = 43200$.
+
+$$AgedBalance(b,h,t,m) = b * BalanceAppreciation(h,t,m)$$
+
+Where $b$ is the balance of the unspent coin.
 
 \subsubsection{Address Network Contribution}
 
@@ -893,8 +897,8 @@ and $d$ is the decay time. The decay time is 30 days of block time which means $
 The Adress Network Contribution ($ANC$) can then be computed as.
 
 $$BC(C,n,t,d)= BeaconDecay(h,t,d) * \sum_{i=0}^{n} C_i$$
-$$AB(C,H,n, t,m) = \sum_{i=0}^{n} AgedBalance(C_i,H_i,t,m)$$
-$$ANC(C,H,n,h,t,d,m) =  BC(C,n,t,d) + AB(C,H,t,m)$$
+$$AB(C,t,m) = \sum_{i=0}^{C_n} AgedBalance(C_i,C_h^i,t,m)$$
+$$NC(C,h,t,d,m) =  BC(C,n,t,d) + AB(C,t,m)$$
 
 Where $C$ is the set of all unspent coin balances, $H$ is the set of all unspent
 coin block heights, $n$ is the total unspent coins, $h$ is the beacon height, $t$
@@ -902,6 +906,21 @@ is the height of the current validation height, $d$ is the number of blocks for
 decay, and $m$ is the number of blocks until coin maturity.
 
 \subsubsection{Subtree Contribution}
+
+Each address is either a leaf node in the Ambassador Forest or a subtree. If the
+node is a leaf, then the subtree contribution of the address is the same as
+the address's network contribution specified above. Otherwise the address is
+a subtree and the contribution is simply the summation of all child subtree
+contributions.
+
+$$SC(N,t,d,m) = NC(N_u,N_h,t,d,m) + \sum_{i=0}^{N_c^t} SC(N_c^i,t,d,m)$$ 
+
+Where $N$ is the address and it's properties, $t$ is the currently validating
+block height, $d$ is the decay time, and $m$ is the maturity time.
+The address property $N_u$ is the address's unspent coins, $N_h$
+is the addresse's beacon block height, $N_c^t$ is the total children, and 
+$N_c^i$ is a child at index $i$.
+
 \subsubsection{Weighted Score}
 \subsubsection{Expected Value}
 \subsubsection{Final CGS}
