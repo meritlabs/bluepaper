@@ -736,12 +736,204 @@ mix them in the same transaction as with Merit. The inputs of invites must also
 be invites, and the outputs must also be invites. You can think of invites as
 a currency within the system which enables the use of Merit.
 
-\subsubsection{Invite Distribution}
+\subsection{Ambassador Rewards}
 
-The algorithm for creating and distributing Merit is similar to the Ambassador
-Lottery except more straightforward. It takes all confirmed addresses in creation
-order and samples them using the previous block hash as a seed and successive
-hashing to determine the winners.
+Merit recognizes that a variety of users contribute to the growth and stability
+of the system but might not run mining nodes. This could be for a variety of reasons, with 
+perhaps the most compelling being that the majority of the world's population does not own a PC.  Unlike bitcoin and other
+cryptocurrencies, Merit does not presume a homogeneous and tech-focused user base. The invite-only
+system requires real people to decide and distribute invites to grow the Merit community.
+The lottery system was designed to reward these stewards. Miners will distribute
+out "Ambassador Rewards" in the form of a lottery based on how well
+they grow the Merit user base. The rewards are distributed per block, with part of each block's total 
+reward being split between the security miner and the top ambassador miners of each period.  
+A deterministic lottery system executes a weighted random sampling
+of the existing keys and distributes proportional rewards to the winners.
+
+As of this writing, about 10 Merit ($MRT$) are awarded to the miners and 10 $MRT$
+are rewarded to Ambassadors. Twenty Ambassadors win rewards per block where 5 $MRT$
+out of the 10 $MRT$ are distributed to Ambassadors based on what we call the 
+$CGS$ distribution and the other 5 $MRT$ are selected from the $SubCGS$ distribution.
+These two distributions will be explained in detail below.
+
+\subsubsection{Community Growth Scores}
+
+Each user in the Merit network has a Community Growth Score ($CGS$) which is
+used to decide how to give out the Ambassador Rewards by the Merit network. 
+The $CGS$ factors in both the balance of the user and also the balances of their
+network. In order to compute the $CGS$ of an address, we must compute several 
+different things and bring them together.
+
+\begin{enumerate}
+    \item Aged Balances of all the addresses.
+    \item Address Network Contribution of all the addresses.
+    \item Subtree Contribution of all the Subtrees in the Ambassador Forest.
+    \item The Weighted Score of all the addresses.
+    \item The Expected Value of each address.
+    \item And finally the Community Growth Score of each address.
+\end{enumerate}
+
+The $CGS$ computation is a variation of the Pachira Lottree \cite{pachira} which
+is a lottery tree that prevents sybil attacks while indirectly incentivizing network growth.
+In addition to indirectly incentizing network growth, we provide direct incentives
+by computing $SubCGS$ and performing a second lottery.
+
+\subsubsection{Aged Balance}
+
+The first step to compute the $CGS$ is to compute the $AgedBalance$ of an Address
+in the network. This is done by taking all the unspent coins, and adding up all the
+balances applying a $BalanceAppreciation$ function to them.
+
+$$BalanceAppreciation(h,t,m) = (1 - \frac{1}{(\frac{t-h}{\frac{m}{4}})^2 + 1.0})$$
+
+Where $h$ is the block height of the coin, $t$ is the height
+of the block being validated, $m$ is the number of blocks to reach maturity. Merit
+uses a 30 day maturity which at the time of a minute between blocks means $m = 43200$.
+
+$$AgedBalance(b,h,t,m) = b * BalanceAppreciation(h,t,m)$$
+
+Where $b$ is the balance of the unspent coin.
+
+\subsubsection{Address Network Contribution}
+
+Each address in the network has a network contribution which is the sum of all
+the unspent coins multiplied by a $BeaconDecay$ function plus the sum of all
+aged balances. The $BeaconDecay$ function follows a similar curve to the $BalanceAppreciation$
+except in reverse.
+
+$$BeaconDecay(h,t,d) = \frac{1}{(\frac{t-h}{\frac{d}{4}})^2 + 1.0}$$
+
+Where $h$ is the height of the beacon, $t$ is the height of the block we are validating,
+and $d$ is the decay time. The decay time is 30 days of block time which means $d = 43200$.
+
+The Adress Network Contribution ($ANC$) can then be computed as.
+
+$$BC(C,n,t,d)= BeaconDecay(h,t,d) \sum_{i=0}^{n} C_i$$
+$$AB(C,t,m) = \sum_{i=0}^{C_n} AgedBalance(C_i,C_h^i,t,m)$$
+$$NC(C,h,t,d,m) =  BC(C,n,t,d) + AB(C,t,m)$$
+
+Where $C$ is the set of all unspent coin balances, $H$ is the set of all unspent
+coin block heights, $n$ is the total unspent coins, $h$ is the beacon height, $t$
+is the height of the current validation height, $d$ is the number of blocks for
+decay, and $m$ is the number of blocks until coin maturity.
+
+\subsubsection{Subtree Contribution}
+
+Each address is either a leaf node in the Ambassador Forest or a subtree. If the
+node is a leaf, then the subtree contribution of the address is the same as
+the address's network contribution specified above. Otherwise the address is
+a subtree and the contribution is simply the summation of all child subtree
+contributions.
+
+$$SC(N,t,d,m) = NC(N_u,N_h,t,d,m) + \sum_{i=0}^{N_c^t} SC(N_c^i,t,d,m)$$ 
+
+Where $N$ is the address and it's properties, $t$ is the currently validating
+block height, $d$ is the decay time, and $m$ is the maturity time.
+The address property $N_u$ is the address's unspent coins, $N_h$
+is the addresse's beacon block height, $N_c^t$ is the total children, and 
+$N_c^i$ is a child at index $i$. The Subtree Contribution can be efficiently
+computed by doing a post-order traversal of the Ambassador Forest. 
+
+\subsubsection{Weighted Score}
+
+After the Subtree Contribution a weighted score is computed for each address.
+The weighted score is a convex function where the curve is controlled by two parameters
+called the $B$ and the $S$ parameters.  
+
+$$WS(c, T, B, S) = B\frac{c}{T} + (1 - B) \frac{c}{T}^{1+S}$$
+
+Where $c$ is the subtree contribution, $T$ is the subtree contribution of the 
+genesis address, which is the same as the entire contribute of the Ambassador
+Forest. The $B$ and $S$ parameters control the balance between rewarding growth
+and fairness. Both $B$ and $S$ must be between 0 and 1. Merit uses $B=0.2$ and 
+$S=0.05$ which was determined via simulation.
+
+\subsubsection{Expected Value}
+
+The final component of computing CGS is calculating the expected value of an 
+Address, which is the probability of the address being selected during the lottery.
+The expected value of an address is the weighted score of the address in question,
+minus the sum of the weighted scores of all addresses's children.
+
+$$ExpectedValue(c, T)  = WS(c, T, 0.2, 0.05) - \sum_{i=0}^{c_n} WS(c_i, T, 0.2, 0.05) $$
+
+Where $c$ is the subtree contribution of an address, $c_i$ is the subtree contribution of
+the addresses child at index $i$, and $T$ is the subtree contribution of the 
+genesis address. Because $WS$ is a convex function, the difference between the
+$Weighted Score$ of a node and it's children get's bigger as the network get's bigger.
+In other words, the $WS$ of an address increases as the network grows under it
+relative to an address with the same direct contribution but without the network.
+
+\subsubsection{Final CGS and SubCGS}
+
+Once all the expected values are computed for each address, the final CGS is simply
+the contribution of the whole Ambassador Forrest times the expected value.
+
+$$ CGS(C, T) = T*ExpectedValue(c, T)$$
+
+And the $SubCGS$ is computed exactly like $CGS$ except $log$ is applied to all the
+contributions.
+
+\subsubsection{Two Lotteries Per Block}
+
+Coins rewarded in merit are split three ways. For every block, half the coins go
+to the miner. The other half is distributed across two lotteries, one based on 
+$CGS$ and the other based on $SubCGS$. Each lottery is executed by applying
+an inverse transform sampling on the set of all valid candidates.
+
+\subsubsection{Valid Candidates}
+
+Only addresses with certain criteria are able to participate in the lotteries. 
+An address must have the following properties.
+
+\begin{enumerate}
+    \item Must have a balance of at least one block reward (20MRT in the beginning).
+    \item Beacon must be valid, meaning it must have at least one invite.
+\end{enumerate}
+
+\subsubsection{CGS Lottery using Inverse Transform Sampling}
+
+Each miner executes a lottery for a particular block by taking all the valid candidates
+and performing an inverse transform sampling \cite{inverse}. 
+
+The cumulative distribution function used in the sampling is computed by taking
+all the $CGSs$, sorting them in ascending order and stacking them on top of one another.
+
+$$CDF(CGS_i) = \frac{PreviousCGS(CGS_i) + CGS_i}{TotalCGS}$$
+
+To pick the 10 winners. the block hash is used as a seed value which is applied
+iteratively per winner to get the next winner.
+
+$$hash = sha256(previousHash, previousWinner)$$
+$$rand = siphash(hash)$$
+
+Where $rand$ is used to search for a winner in the $CDF$ space. This search in $O(logn)$
+time by doing a lower bound search given the rand value in the $CDF$ space.
+The overall complexity of the sampling is $O(nlog(n) + slog(n))$ where $n$ is the number
+of candidates and $s$ is the number of samples.
+
+\subsection{Invite Rewards}
+
+The algorithm for creating and distributing invites is similar to the Ambassador
+Lottery except there are three lotteries. 
+
+\begin{enumerate}
+        \item The Lottery based on $SubCGS$.
+        \item The one-time award lottery.
+        \item The random lottery.
+\end{enumerate}
+
+Each of these lotteries has a specific purpose to improve the overall experience
+of old and new users.
+
+\subsubsection{Selecting Addresses}
+
+As the blocks progress, Merit needs to decide whether to distribute invites 
+or not. At a minimum one out of ten blocks, the miner is awarded an invite and
+one out of ten blocks, one invite is distributed to an address based on the three
+potential lotteries. Note this is the minimum amount of invites distributed and
+Merit will adjust the amount upwards as more invites are used by doing a moving
+average over the last $X$ blocks. Typically over a days worth of blocks.
 
 \begin{figure}[H]
     \begin{center}
@@ -780,6 +972,53 @@ hashing to determine the winners.
     \end{center}
     \caption{Decentralized Invite Generation}
 \end{figure}
+
+When the protocol decides to generate and distribute an invite, it first selects
+one of the lotteries by using the previous block hash as a seed. Each lottery
+has a certain probability of being selected, with the $SubCGS$ lottery being
+selected 50\% of the time, the one-time award lottery 40\%, and the remaining
+10\% is distributed via the random lottery.
+
+    $$seed = sha256(previousBlockHash)$$
+    $$hash = seed$$
+    $$lottery_0 = siphash(seed) mod 3$$
+    $$hash = sha256(hash)$$
+    $$lottery_1 = siphash(hash) mod 3$$
+    $$...$$
+
+One the lottery is selected, it executes it to get an address to reward with an invite.
+
+\subsubsection{The SubCGS Lottery}
+
+This lottery is executed just as the $SubCGS$ lottery is for the ambassador rewards.
+The higher your $SubCGS$ the more likely you will be given an invite. The
+reasoning behind this is that those successfully growing the community should recieve 
+more invites.
+
+\subsubsection{The One-Time Reward Lottery}
+
+This lottery is fairly straight forward. It looks at all candiates which have not
+previously one an invite and gives them one. Since you have to burn an invite to 
+be able to get one in this lottery, making new addresses for the sake of participating
+does not make much sense and cancels out any benefit. The lottery is performed as a 
+simple search.
+
+\lstset{language=C}
+\begin{lstlisting}[caption=One-Time Reward Algorithm]
+    for candidate in  candidates
+        next if candidate has already won once.
+        next if candidate has more than 2 invites already.
+        mark candidate
+        return candidate
+\end{lstlisting}
+
+The reasoning behind this lottery is that new users should get an invite because
+they need a kick start to grow their own network.
+
+\subsubsection{The Random Lottery}
+It takes all candidate addresses in creation
+order and samples them using the previous block hash as a seed and successive
+hashing to determine the winners.
 
 The first address is determined by taking the previous block hash and then running
 it through siphash \cite{siphash} to determine a 64-bit random number.
@@ -821,131 +1060,14 @@ which further decreases its likelihood of success.
 
 \subsubsection{Distribution Rate}
 
-The number of invites generated is based on the usage of invites within the last three days.  
-The invite distribution algorithm looks at the number of blocks that would have comprised the previous three days
+The number of invites generated is based on the usage of invites within the last day.  
+The invite distribution algorithm looks at the number of blocks that would have comprised the previous day
 (assuming 1 block issued per minute). The algorithm self-regulates in this way so that 
 there are never too many or too few invites in the system at any given time.  The system 
-has an inherent minimum of one invite per minute to a maximum of ten invites per minute.
+has an inherent minimum of two invites per ten minutes.
 
-We can illustrate this through an example.  If, in the last five days, users have sent 7 invitations
+We can illustrate this through an example.  If, in the last day, users have sent 7 invitations
 per block on average, that would mean that the current block should reward community members with 7 new invites.  
-
-\subsection{Ambassador Rewards}
-
-Merit recognizes that a variety of users contribute to the growth and stability
-of the system but might not run mining nodes. This could be for a variety of reasons, with 
-perhaps the most compelling being that the majority of the world's population does not own a PC.  Unlike bitcoin and other
-cryptocurrencies, Merit does not presume a homogeneous and tech-focused user base. The invite-only
-system requires real people to decide and distribute invites to grow the Merit community.
-The lottery system was designed to reward these stewards. Miners will distribute
-out "Ambassador Rewards" in the form of a lottery based on how well
-they grow the Merit user base. The rewards are distributed per block, with part of each block's total 
-reward being split between the security miner and the top ambassador miners of each period.  
-A deterministic lottery system executes a weighted random sampling
-of the existing keys and distributes proportional rewards to the winners.
-
-As of this writing, about 10 Merit ($MRT$) are awarded to the miners and 10 $MRT$
-are rewarded to Ambassadors. Twenty Ambassadors win rewards per block where 5 $MRT$
-out of the 10 $MRT$ are distributed to Ambassadors based on what we call the 
-$CGS$ distribution and the other 5 $MRT$ are selected from the $SubCGS$ distribution.
-These two distributions will be explained in detail below.
-
-\subsubsection{Community Growth Scores}
-
-Each user in the Merit network has a Community Growth Score ($CGS$) which is
-used to decide how to give out the Ambassador Rewards by the Merit network. 
-The $CGS$ factors in both the balance of the user and also the balances of their
-network. In order to compute the $CGS$ of an address, we must compute several 
-different things and bring them together.
-
-\begin{enumerate}
-    \item Aged Balances of all the addresses.
-    \item Address Network Contribution of all the addresses.
-    \item Subtree Contribution of all the Subtrees in the Ambassador Forest.
-    \item The Weighted Score of all the Addresses.
-    \item And finally the Expected Value of each address.
-\end{enumerate}
-
-\subsubsection{Aged Balance}
-
-The first step to compute the $CGS$ is to compute the $AgedBalance$ of an Address
-in the network. This is done by taking all the unspent coins, and adding up all the
-balances applying a $BalanceAppreciation$ function to them.
-
-$$BalanceAppreciation(h,t,m) = (1 - \frac{1}{(\frac{t-h}{\frac{m}{4}})^2 + 1.0})$$
-
-Where $h$ is the block height of the coin, $t$ is the height
-of the block being validated, $m$ is the number of blocks to reach maturity. Merit
-uses a 30 day maturity which at the time of a minute between blocks means $m = 43200$.
-
-$$AgedBalance(b,h,t,m) = b * BalanceAppreciation(h,t,m)$$
-
-Where $b$ is the balance of the unspent coin.
-
-\subsubsection{Address Network Contribution}
-
-Each address in the network has a network contribution which is the sum of all
-the unspent coins multiplied by a $BeaconDecay$ function plus the sum of all
-aged balances. The $BeaconDecay$ function follows a similar curve to the $BalanceAppreciation$
-except in reverse.
-
-$$BeaconDecay(h,t,d) = \frac{1}{(\frac{t-h}{\frac{d}{4}})^2 + 1.0}$$
-
-Where $h$ is the height of the beacon, $t$ is the height of the block we are validating,
-and $d$ is the decay time. The decay time is 30 days of block time which means $d = 43200$.
-
-The Adress Network Contribution ($ANC$) can then be computed as.
-
-$$BC(C,n,t,d)= BeaconDecay(h,t,d) * \sum_{i=0}^{n} C_i$$
-$$AB(C,t,m) = \sum_{i=0}^{C_n} AgedBalance(C_i,C_h^i,t,m)$$
-$$NC(C,h,t,d,m) =  BC(C,n,t,d) + AB(C,t,m)$$
-
-Where $C$ is the set of all unspent coin balances, $H$ is the set of all unspent
-coin block heights, $n$ is the total unspent coins, $h$ is the beacon height, $t$
-is the height of the current validation height, $d$ is the number of blocks for
-decay, and $m$ is the number of blocks until coin maturity.
-
-\subsubsection{Subtree Contribution}
-
-Each address is either a leaf node in the Ambassador Forest or a subtree. If the
-node is a leaf, then the subtree contribution of the address is the same as
-the address's network contribution specified above. Otherwise the address is
-a subtree and the contribution is simply the summation of all child subtree
-contributions.
-
-$$SC(N,t,d,m) = NC(N_u,N_h,t,d,m) + \sum_{i=0}^{N_c^t} SC(N_c^i,t,d,m)$$ 
-
-Where $N$ is the address and it's properties, $t$ is the currently validating
-block height, $d$ is the decay time, and $m$ is the maturity time.
-The address property $N_u$ is the address's unspent coins, $N_h$
-is the addresse's beacon block height, $N_c^t$ is the total children, and 
-$N_c^i$ is a child at index $i$.
-
-\subsubsection{Weighted Score}
-\subsubsection{Expected Value}
-\subsubsection{Final CGS}
-
-\subsubsection{Block Lottery using Inverse Transform Sampling}
-
-Each miner executes a lottery for a particular block by taking addresses in
-the Lottery Pool and performing an inverse transform sampling \cite{inverse}.
-An inverse transform sampling is used because the lottery conducts sampling
-with replacement. This means it is possible for someone to win two or more
-rewards per block, though very unlikely. This design choice seemed the fairest to
-Ambassadors.
-
-The cumulative distribution function used in the sampling is computed by taking
-all the entrant's $CGSs$ and stacking them on top of one another.
-
-$$CDF(CGS_i) = \frac{PreviousCGS(CGS_i) + CGS_i}{TotalCGS}$$
-
-To pick the top five winners. Similar to how the entrant gets in the lottery in the
-first place, the block hash is used as a seed value.
-
-$$hash = sha256(previousHash, previousWinner)$$
-$$rand = siphash(hash)$$
-
-Where $rand$ is used to search for a winner in the CDF space.
 
 \subsection{Community Beacons}
 
